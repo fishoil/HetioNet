@@ -89,7 +89,8 @@
 - Separate read and write operations into different scripts.
 - Robust error handling for database operations.
 - Utilize database indexes for faster query execution.
-- Implement data cleaning methods within 'create_database' functions for neo4j and mongoDB
+- Implement data cleaning methods within 'create_database' functions for neo4j and mongoDB classes
+- Fix 'create_database' functions within neo4j and mongoDB classes
 
 ### Usage Example
 - Python Version: 3.11
