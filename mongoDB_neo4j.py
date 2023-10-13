@@ -1,6 +1,11 @@
 # Author: Long Huang
 # Project 1: HetioNet Database Query Tool
+# Resources: Project 1 Instructions, Google, StackOverflow, MongoDB Documentation, Neo4j Documentation, etc.
 # Description: This script is a user case of querying the hetionet database in MongoDB and neo4j.
+#				1. Create and populate the database in MongoDB and neo4j
+#				2. Query information for a known disease by ID in MongoDB and neo4j
+#				3. Find potential drugs for a new disease by ID in MongoDB and neo4j
+
 import argparse
 import csv
 from pymongo import MongoClient
@@ -27,7 +32,7 @@ class Neo4jClient:
 		"""DO NOT USE!!! haven't test it yet, not sure if it works,
             not certain if manual upload to neo4j desktop vs.
             using this script to upload to neo4j are the same.
-            concern: file not cleaned"""
+            concern: file not cleaned, unfamiliar with py2neo package"""
 		"""Populate the Neo4j database"""
 		# Clear existing nodes and relationships (CAUTION: This will remove all existing data)
 		tx.run("MATCH (n) DETACH DELETE n")
@@ -51,11 +56,14 @@ class Neo4jClient:
 		print("Neo4j database created and populated.")
 
 	def query_disease_info_neo4j(self, disease_id):
+		"""Given a disease id, return its name, drugs that treat it, genes that cause it, and anatomy that it affects"""
 		with self._driver.session() as session:
 			return session.execute_read(self._query_disease_info_tx, disease_id)
 
+	# static method can be called on the class itself without instantiating the class
 	@staticmethod
 	def _query_disease_info_tx(tx, disease_id):
+		"""Given a disease id, return its name, drugs that treat it, genes that cause it, and anatomy that it affects"""
 		query = '''
         MATCH (d:Node {kind: "Disease", id: $disease_id})
         OPTIONAL MATCH (d)-[:RELATES {metaedge: "CtD"}]->(c:Node {kind: "Compound"})
@@ -70,11 +78,13 @@ class Neo4jClient:
 		return result.data()
 
 	def find_potential_drugs_for_new_disease(self, disease_id):
+		"""Given a disease id, return a list of drugs that can treat it"""
 		with self._driver.session() as session:
 			return session.execute_read(self._find_potential_drugs_tx, disease_id)
 
 	@staticmethod
 	def _find_potential_drugs_tx(tx, disease_id):
+		"""Given a disease id, return a list of drugs that can treat it"""
 		query = '''
         MATCH (d:Node {kind: "Disease", id: $disease_id})
         OPTIONAL MATCH (d)-[:RELATES {metaedge: "DlA"}]->(a:Node {kind: "Anatomy"})
@@ -100,7 +110,7 @@ class MongoDBClient:
         i am not certain if manual upload to mongoDB compass vs.
         using this script to upload to mongoDB are the same.
         concern: file not cleaned error with csv reader
-                 Don't know how to batch insert with pymongo"""
+                 Don't know how to batch import with pymongo"""
 		"""MongoDB version of create_database"""
 		"""create database and collections, it clears the database if it exists"""
 		db = self._client['hetionet_db']
@@ -182,6 +192,11 @@ class MongoDBClient:
 		print(f"Where this disease occurs: {', '.join(anatomy_names) if anatomy_names else 'None'}")
 
 	def find_potential_drugs_for_new_disease(self, disease_id):
+		"""Given a disease id, return a list of drugs that can treat it"""
+		"""This function is very slow, so slow it may take hours to run
+		due to the nature of document based database, 
+		it is not suitable for this type of query, 
+		but I will include it anyway for completeness"""
 		related_gene_edges = list(
 			self._edges_collection.find({'source': disease_id, 'metaedge': {'$in': ['DdG', 'DuG']}}))
 		related_anatomy_edges = list(self._edges_collection.find({'source': disease_id, 'metaedge': 'DlA'}))
